@@ -47,12 +47,25 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Get Tag And Version
+      - name: Get Tag Version
+        if: ${{ matrix.os != 'window-latest' }}
         id: get_tag_version
         run: |
           echo ${GITHUB_REF#refs/tags/}
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Get Tag Version
+        if: ${{ matrix.os == 'window-latest' }}
+        id: get_tag_version
+        run: |
+          echo "${env:GITHUB_REF}"
+
+          $tag = ${env:GITHUB_REF} -replace "refs/tags/" -replace ""
+          $version = ${env:GITHUB_REF} -replace "refs/tags/v" -replace ""
+
+          echo "TAG=$tag" >> $GITHUB_ENV
+          echo "VERSION=$version" >> $GITHUB_ENV
 
       - name: Cargo build
         uses: actions-rs/cargo@v1
@@ -77,6 +90,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get Release Upload URL
+        if: ${{ matrix.os != 'window-latest' }}
         id: get_upload_url
         run: |
           url=$(echo "$response" | jq -r '.upload_url')
@@ -84,6 +98,17 @@ jobs:
           echo "upload_url=$url" >> $GITHUB_ENV
         env:
           response:  ${{ steps.get_release.outputs.data }}
+
+      - name: Get Release Upload URL
+        if: ${{ matrix.os == 'window-latest' }}
+        id: get_upload_url
+        run: |
+          $url = ${env:response} | jq -r '.upload_url'
+          echo ${env:response}
+          echo $url
+          echo "upload_url=$url" >> $GITHUB_ENV
+        env:
+          response: ${{ steps.get_release.outputs.data }}
 
       - name: Upload Release Asset
         id: upload_release_asset
