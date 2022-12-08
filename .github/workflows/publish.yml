@@ -44,51 +44,51 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Get Tag And Version
-      id: get_tag_version
-      run: |
-        echo ${GITHUB_REF#refs/tags/}
-        echo ::set-output name=TAG::${GITHUB_REF#refs/tags/}
-        echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+      - name: Get Tag And Version
+        id: get_tag_version
+        run: |
+          echo ${GITHUB_REF#refs/tags/}
+          echo ::set-output name=TAG::${GITHUB_REF#refs/tags/}
+          echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
 
-    - name: Cargo build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --release
+      - name: Cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: ${{ matrix.prefix }}-${{ matrix.file-name }}
-        path: ./target/release/${{ matrix.file-name }}
-        if-no-files-found: error
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.prefix }}-${{ matrix.file-name }}
+          path: ./target/release/${{ matrix.file-name }}
+          if-no-files-found: error
 
-    - name: Get Release
-      uses: octokit/request-action@v2.x
-      id: get_release
-      with:
-        route: GET /repos/:repository/releases/tags/${{ steps.get_tag_version.outputs.TAG }}
-        repository: ${{ github.repository }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get Release
+        uses: octokit/request-action@v2.x
+        id: get_release
+        with:
+          route: GET /repos/:repository/releases/tags/${{ steps.get_tag_version.outputs.TAG }}
+          repository: ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Get Release Upload URL
-      id: get_upload_url
-      run: |
-        url=$(echo "$response" | jq -r '.upload_url')
-        echo $url
-        echo "::set-output name=upload_url::$url"
-      env:
-        response:  ${{ steps.get_release.outputs.data }}
+      - name: Get Release Upload URL
+        id: get_upload_url
+        run: |
+          url=$(echo "$response" | jq -r '.upload_url')
+          echo $url
+          echo "::set-output name=upload_url::$url"
+        env:
+          response:  ${{ steps.get_release.outputs.data }}
 
-    - name: Upload Release Asset
-      id: upload_release_asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: ./target/release/${{ matrix.file-name }}
-        asset_name: ${{ matrix.file-name }}
-        asset_content_type: application/octet-stream
+      - name: Upload Release Asset
+        id: upload_release_asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
+          asset_path: ./target/release/${{ matrix.file-name }}
+          asset_name: ${{ matrix.file-name }}
+          asset_content_type: application/octet-stream
