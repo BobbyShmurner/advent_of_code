@@ -51,8 +51,8 @@ jobs:
         id: get_tag_version
         run: |
           echo ${GITHUB_REF#refs/tags/}
-          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Cargo build
         uses: actions-rs/cargo@v1
@@ -81,7 +81,7 @@ jobs:
         run: |
           url=$(echo "$response" | jq -r '.upload_url')
           echo $url
-          echo "upload_url=$url" >> $GITHUB_OUTPUT
+          echo "upload_url=$url" >> $GITHUB_ENV
         env:
           response:  ${{ steps.get_release.outputs.data }}
 
