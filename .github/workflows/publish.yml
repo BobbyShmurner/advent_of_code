@@ -57,7 +57,7 @@ jobs:
 
       - name: Get Tag Version
         if: ${{ matrix.os == 'window-latest' }}
-        id: get_tag_version
+        id: get_tag_version_win
         run: |
           echo "${env:GITHUB_REF}"
 
@@ -101,7 +101,7 @@ jobs:
 
       - name: Get Release Upload URL
         if: ${{ matrix.os == 'window-latest' }}
-        id: get_upload_url
+        id: get_upload_url_win
         run: |
           $url = ${env:response} | jq -r '.upload_url'
           echo ${env:response}
