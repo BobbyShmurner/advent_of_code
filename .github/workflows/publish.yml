@@ -61,7 +61,7 @@ jobs:
           echo "${env:GITHUB_REF}"
 
           $tag = ${env:GITHUB_REF} -replace "refs/tags/" -replace ""
-          echo "TAG=$tag" >> $GITHUB_ENV
+          echo "TAG=$tag" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
           echo "Tag: $tag"
 
@@ -108,7 +108,7 @@ jobs:
           $url = ${env:response} | jq -r '.upload_url'
           echo ${env:response}
           echo $url
-          echo "upload_url=$url" >> $GITHUB_ENV
+          echo "upload_url=$url" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
         env:
           response: ${{ steps.get_release.outputs.data }}
 
