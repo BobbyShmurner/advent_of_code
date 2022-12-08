@@ -1,13 +1,18 @@
+use itertools::Itertools;
 use simple_error::SimpleError;
 
 use crate::DayReturnType;
 
-fn get_common_char(input: &str) -> Option<char> {
-    let (first_half, second_half) = input.trim().split_at(input.len() / 2);
+fn get_common_char(items: &[&str]) -> Option<char> {
+    items[0].chars().find(|&letter| {
+        for i in 1..items.len() {
+            if !items[i].contains(letter) {
+                return false;
+            }
+        }
 
-    first_half
-        .chars()
-        .find(|&letter| second_half.contains(letter))
+        true
+    })
 }
 
 fn get_char_priority(letter: &char) -> u32 {
@@ -24,7 +29,10 @@ fn get_char_priority(letter: &char) -> u32 {
 }
 
 fn get_line_priority(line: &str) -> Result<u32, String> {
-    let common_char = match get_common_char(line) {
+    let (first_half, second_half) = line.trim().split_at(line.len() / 2);
+    let halfs = vec![first_half, second_half];
+
+    let common_char = match get_common_char(&halfs) {
         Some(val) => val,
         None => {
             return Err(format!(
@@ -37,17 +45,40 @@ fn get_line_priority(line: &str) -> Result<u32, String> {
     Ok(get_char_priority(&common_char))
 }
 
+fn get_group_priority(group: &[&str]) -> Result<u32, String> {
+    let common_char = match get_common_char(group) {
+        Some(val) => val,
+        None => {
+            return Err(format!(
+                "Failed to find a common character in the group \"{:#?}\"",
+                group
+            ))
+        }
+    };
+
+    Ok(get_char_priority(&common_char))
+}
+
 pub fn execute(input: &str) -> DayReturnType {
     let mut total_priority = 0;
+    let mut group_priority = 0;
+    let input = input.trim();
 
-    for line in input.trim().lines() {
+    for line in input.lines() {
         total_priority += match get_line_priority(line) {
             Ok(val) => val,
             Err(e) => return Err(Box::new(SimpleError::new(e))),
         }
     }
 
-    Ok((total_priority.to_string(), "Answer2".to_string()))
+    for group in input.lines().chunks(3).into_iter() {
+        group_priority += match get_group_priority(&group.collect_vec()) {
+            Ok(val) => val,
+            Err(e) => return Err(Box::new(SimpleError::new(e))),
+        }
+    }
+
+    Ok((total_priority.to_string(), group_priority.to_string()))
 }
 
 #[cfg(test)]
