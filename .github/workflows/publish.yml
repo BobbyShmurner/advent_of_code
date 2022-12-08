@@ -47,25 +47,23 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Get Tag Version
+      - name: Get Tag
         if: ${{ matrix.os != 'windows-latest' }}
-        id: get_tag_version
+        id: get_tag
         run: |
           echo ${GITHUB_REF#refs/tags/}
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Get Tag Version (Win)
+      - name: Get Tag (Win)
         if: ${{ matrix.os == 'windows-latest' }}
-        id: get_tag_version_win
+        id: get_tag_win
         run: |
           echo "${env:GITHUB_REF}"
 
           $tag = ${env:GITHUB_REF} -replace "refs/tags/" -replace ""
-          $version = ${env:GITHUB_REF} -replace "refs/tags/v" -replace ""
-
           echo "TAG=$tag" >> $GITHUB_ENV
-          echo "VERSION=$version" >> $GITHUB_ENV
+
+          echo "Tag: $tag"
 
       - name: Cargo build
         uses: actions-rs/cargo@v1
