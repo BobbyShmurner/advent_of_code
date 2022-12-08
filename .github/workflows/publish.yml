@@ -65,6 +65,10 @@ jobs:
 
           echo "Tag: $tag"
 
+      - name: Print Tag Env
+        run: |
+          echo ${{ env.TAG }}
+
       - name: Cargo build
         uses: actions-rs/cargo@v1
         with:
