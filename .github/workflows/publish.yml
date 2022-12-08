@@ -15,14 +15,17 @@ jobs:
           - os: ubuntu-latest
             file-name: advent_of_code
             prefix: linux
+            upload-prefix: linux_x86_64
 
           - os: macOS-latest
             file-name: advent_of_code
             prefix: macos
+            upload-prefix: macos_x86_64
 
           - os: windows-latest
             file-name: advent_of_code.exe
             prefix: windows
+            upload-prefix: win_x86_64
 
     steps:
       - name: Checkout
@@ -48,8 +51,8 @@ jobs:
         id: get_tag_version
         run: |
           echo ${GITHUB_REF#refs/tags/}
-          echo ::set-output name=TAG::${GITHUB_REF#refs/tags/}
-          echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Cargo build
         uses: actions-rs/cargo@v1
@@ -68,7 +71,7 @@ jobs:
         uses: octokit/request-action@v2.x
         id: get_release
         with:
-          route: GET /repos/:repository/releases/tags/${{ steps.get_tag_version.outputs.TAG }}
+          route: GET /repos/:repository/releases/tags/${{ env.TAG }}
           repository: ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -78,7 +81,7 @@ jobs:
         run: |
           url=$(echo "$response" | jq -r '.upload_url')
           echo $url
-          echo "::set-output name=upload_url::$url"
+          echo "upload_url=$url" >> $GITHUB_OUTPUT
         env:
           response:  ${{ steps.get_release.outputs.data }}
 
@@ -88,7 +91,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
+          upload_url: ${{ env.upload_url }}
           asset_path: ./target/release/${{ matrix.file-name }}
-          asset_name: ${{ matrix.file-name }}
+          asset_name: ${{ matrix.upload-prefix }}-${{ matrix.file-name }}
           asset_content_type: application/octet-stream
