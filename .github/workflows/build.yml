@@ -1,0 +1,63 @@
+name: Cargo Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        include:
+          - os: ubuntu-latest
+            file-name: advent_of_code
+            prefix: linux
+            upload-prefix: linux_x86_64
+
+          - os: macOS-latest
+            file-name: advent_of_code
+            prefix: macos
+            upload-prefix: macos_x86_64
+
+          - os: windows-latest
+            file-name: advent_of_code.exe
+            prefix: windows
+            upload-prefix: win_x86_64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+
+      - name: Restore Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.prefix }}-${{ matrix.file-name }}
+          path: ./target/release/${{ matrix.file-name }}
+          if-no-files-found: error
