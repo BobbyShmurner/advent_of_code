@@ -48,15 +48,15 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Get Tag Version
-        if: ${{ matrix.os != 'window-latest' }}
+        if: ${{ matrix.os != 'windows-latest' }}
         id: get_tag_version
         run: |
           echo ${GITHUB_REF#refs/tags/}
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Get Tag Version
-        if: ${{ matrix.os == 'window-latest' }}
+      - name: Get Tag Version (Win)
+        if: ${{ matrix.os == 'windows-latest' }}
         id: get_tag_version_win
         run: |
           echo "${env:GITHUB_REF}"
@@ -90,7 +90,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get Release Upload URL
-        if: ${{ matrix.os != 'window-latest' }}
+        if: ${{ matrix.os != 'windows-latest' }}
         id: get_upload_url
         run: |
           url=$(echo "$response" | jq -r '.upload_url')
@@ -99,8 +99,8 @@ jobs:
         env:
           response:  ${{ steps.get_release.outputs.data }}
 
-      - name: Get Release Upload URL
-        if: ${{ matrix.os == 'window-latest' }}
+      - name: Get Release Upload URL (Win)
+        if: ${{ matrix.os == 'windows-latest' }}
         id: get_upload_url_win
         run: |
           $url = ${env:response} | jq -r '.upload_url'
