@@ -16,18 +16,15 @@ jobs:
         include:
           - os: ubuntu-latest
             file-name: advent_of_code
-            prefix: linux
-            upload-prefix: linux_x86_64
+            prefix: linux_x86_64
 
           - os: macOS-latest
             file-name: advent_of_code
-            prefix: macos
-            upload-prefix: macos_x86_64
+            prefix: macos_x86_64
 
           - os: windows-latest
             file-name: advent_of_code.exe
-            prefix: windows
-            upload-prefix: win_x86_64
+            prefix: win_x86_64
 
     steps:
       - name: Checkout
