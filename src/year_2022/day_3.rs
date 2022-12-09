@@ -5,8 +5,8 @@ use crate::DayReturnType;
 
 fn get_common_char(items: &[&str]) -> Option<char> {
     items[0].chars().find(|&letter| {
-        for i in 1..items.len() {
-            if !items[i].contains(letter) {
+        for item in items.iter().skip(1) {
+            if !item.contains(letter) {
                 return false;
             }
         }

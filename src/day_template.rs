@@ -2,7 +2,7 @@ use simple_error::SimpleError;
 
 use crate::DayReturnType;
 
-pub fn execute(_input: &str) -> DayReturnType {
+pub fn execute(input: &str) -> DayReturnType {
     Err(Box::new(SimpleError::new(
         "Code For This Day Is Not Complete!",
     )))

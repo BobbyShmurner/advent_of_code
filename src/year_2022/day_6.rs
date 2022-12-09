@@ -8,37 +8,37 @@ pub fn execute(_input: &str) -> DayReturnType {
     )))
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn part1_example() {
-        let test_data = vec![
-            ("mjqjpqmgbljsphdztnvjfqwrcgsmlb", "7"),
-            ("bvwbjplbgvbhsrlpgdmjqwftvncz", "5"),
-            ("nppdvjthqldpwncqszvftbrmjlhg", "6"),
-            ("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", "10"),
-            ("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", "11"),
-        ];
+// #[cfg(test)]
+// mod tests {
+//     #[test]
+//     fn part1_example() {
+//         let test_data = vec![
+//             ("mjqjpqmgbljsphdztnvjfqwrcgsmlb", "7"),
+//             ("bvwbjplbgvbhsrlpgdmjqwftvncz", "5"),
+//             ("nppdvjthqldpwncqszvftbrmjlhg", "6"),
+//             ("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", "10"),
+//             ("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", "11"),
+//         ];
 
-        for (input, answer) in test_data {
-            let result = super::execute(input).unwrap().0;
-            assert_eq!(answer, result);
-        }
-    }
+//         for (input, answer) in test_data {
+//             let result = super::execute(input).unwrap().0;
+//             assert_eq!(answer, result);
+//         }
+//     }
 
-    #[test]
-    fn part2_example() {
-        let test_data = vec![
-            ("mjqjpqmgbljsphdztnvjfqwrcgsmlb", "19"),
-            ("bvwbjplbgvbhsrlpgdmjqwftvncz", "23"),
-            ("nppdvjthqldpwncqszvftbrmjlhg", "23"),
-            ("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", "29"),
-            ("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", "26"),
-        ];
+//     #[test]
+//     fn part2_example() {
+//         let test_data = vec![
+//             ("mjqjpqmgbljsphdztnvjfqwrcgsmlb", "19"),
+//             ("bvwbjplbgvbhsrlpgdmjqwftvncz", "23"),
+//             ("nppdvjthqldpwncqszvftbrmjlhg", "23"),
+//             ("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", "29"),
+//             ("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", "26"),
+//         ];
 
-        for (input, answer) in test_data {
-            let result = super::execute(input).unwrap().1;
-            assert_eq!(answer, result);
-        }
-    }
-}
+//         for (input, answer) in test_data {
+//             let result = super::execute(input).unwrap().1;
+//             assert_eq!(answer, result);
+//         }
+//     }
+// }

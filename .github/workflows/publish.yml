@@ -71,6 +71,11 @@ jobs:
           command: build
           args: --release
 
+      - name: Cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:

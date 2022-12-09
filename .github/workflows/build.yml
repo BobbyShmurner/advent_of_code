@@ -49,6 +49,11 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
       - name: Cargo build
         uses: actions-rs/cargo@v1
         with:
