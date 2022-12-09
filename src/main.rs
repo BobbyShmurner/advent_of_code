@@ -1,11 +1,12 @@
 extern crate advent_of_code;
 
-use advent_of_code::cls;
+use advent_of_code::pause;
+use clearscreen::clear;
 
 use std::process;
 
 fn main() {
-    cls();
+    clear().unwrap();
     println!("Welcome To Bobby Shmurner's Advent Of Code!");
 
     match advent_of_code::select_day() {
@@ -17,4 +18,6 @@ fn main() {
             process::exit(1);
         }
     };
+
+    pause("\nPress Enter To Exit...");
 }

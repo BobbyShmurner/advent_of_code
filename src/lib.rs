@@ -1,7 +1,10 @@
 use std::error::Error;
 use std::fs;
 use std::io;
+use std::io::Read;
 use std::io::Write;
+
+use clearscreen::clear;
 
 pub mod macros;
 pub mod year_2022;
@@ -161,9 +164,14 @@ pub fn get_input(prompt: &str) -> String {
     input.trim().to_string()
 }
 
-pub fn cls() {
-    print!("\x1B[2J\x1B[1;1H");
-    io::stdout().flush().unwrap();
+pub fn pause(prompt: &str) {
+    let mut stdout = io::stdout();
+    let mut stdin = io::stdin();
+
+    write!(stdout, "{prompt}").unwrap();
+    stdout.flush().unwrap();
+
+    let _ = stdin.read(&mut [0u8]).unwrap();
 }
 
 pub fn select_day() -> DayReturnType {
@@ -178,7 +186,7 @@ pub fn select_day() -> DayReturnType {
 
         let input = get_input("\nPlease Select A Year: ");
         selected_year = unwrap_or_else!(Year::get_year(&years, &input), error: e, {
-            cls();
+            clear().unwrap();
             eprintln!("{e}");
             continue;
         });
@@ -186,7 +194,7 @@ pub fn select_day() -> DayReturnType {
         break;
     }
 
-    cls();
+    clear().unwrap();
     println!("Selected Year {}", selected_year.year);
 
     loop {
@@ -195,7 +203,7 @@ pub fn select_day() -> DayReturnType {
 
         let input = get_input("\nPlease Select A Day: ");
         selected_day = unwrap_or_else!(selected_year.get_day(&input), error: e, {
-            cls();
+            clear().unwrap();
             eprintln!("{e}");
             continue;
         });
@@ -203,7 +211,7 @@ pub fn select_day() -> DayReturnType {
         break;
     }
 
-    cls();
+    clear().unwrap();
 
     let input = unwrap_or_return!(selected_year.get_input(selected_day));
     selected_day.execute(&input)
