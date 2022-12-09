@@ -1,4 +1,4 @@
-name: Cargo Build
+name: Publish Release
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  publish:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
