@@ -1,5 +1,5 @@
-use simple_error::SimpleError;
-
+use crate::macros::*;
+use crate::BoxedError;
 use crate::DayReturnType;
 
 #[derive(PartialEq)]
@@ -16,23 +16,23 @@ enum RoundStates {
 }
 
 impl RoundStates {
-    fn from_letter(letter: &str) -> Result<Self, String> {
+    fn from_letter(letter: &str) -> Result<Self, BoxedError> {
         match letter.to_uppercase().trim() {
             "X" => Ok(Self::Loose),
             "Y" => Ok(Self::Draw),
             "Z" => Ok(Self::Win),
-            _ => Err(format!("Invalid letter \"{}\"", letter)),
+            _ => return_err!("Invalid letter \"{}\"", letter),
         }
     }
 }
 
 impl PlayableItems {
-    fn from_letter(letter: &str) -> Result<Self, String> {
+    fn from_letter(letter: &str) -> Result<Self, BoxedError> {
         match letter.to_uppercase().trim() {
             "A" | "X" => Ok(Self::Rock),
             "B" | "Y" => Ok(Self::Paper),
             "C" | "Z" => Ok(Self::Scissors),
-            _ => Err(format!("Invalid letter \"{}\"", letter)),
+            _ => return_err!("Invalid letter \"{}\"", letter),
         }
     }
 
@@ -82,7 +82,7 @@ impl PlayableItems {
         item_score + round_score
     }
 
-    fn get_round_from_str(input: &str) -> Result<(u32, u32), String> {
+    fn get_round_from_str(input: &str) -> Result<(u32, u32), BoxedError> {
         let (other_str, this_str) = input.trim().split_at(1);
 
         let other = PlayableItems::from_letter(other_str)?;
@@ -103,10 +103,7 @@ pub fn execute(input: &str) -> DayReturnType {
     let mut part2_total = 0;
 
     for line in input.trim().lines() {
-        let (part1_score, part2_score) = match PlayableItems::get_round_from_str(line) {
-            Ok(val) => val,
-            Err(e) => return Err(Box::new(SimpleError::new(e))),
-        };
+        let (part1_score, part2_score) = unwrap_or_return!(PlayableItems::get_round_from_str(line));
 
         part1_total += part1_score;
         part2_total += part2_score;

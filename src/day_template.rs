@@ -1,11 +1,10 @@
 use simple_error::SimpleError;
 
+use crate::macros::*;
 use crate::DayReturnType;
 
 pub fn execute(input: &str) -> DayReturnType {
-    Err(Box::new(SimpleError::new(
-        "Code For This Day Is Not Complete!",
-    )))
+    return_err!("Code For This Day Is Not Complete!");
 }
 
 #[cfg(test)]

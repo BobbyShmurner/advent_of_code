@@ -10,10 +10,10 @@ fn main() {
 
     match advent_of_code::select_day() {
         Ok((answer_1, answer_2)) => {
-            println!("Answer 1: {}\nAnswer 2: {}", answer_1, answer_2);
+            println!("Complete!\n\nPart 1: \"{answer_1}\"\nPart 2: \"{answer_2}\"");
         }
         Err(error) => {
-            eprintln!("An error occured: {}", error);
+            eprintln!("An error occured: {error}");
             process::exit(1);
         }
     };

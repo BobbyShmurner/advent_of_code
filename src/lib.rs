@@ -3,12 +3,14 @@ use std::fs;
 use std::io;
 use std::io::Write;
 
-use simple_error::SimpleError;
+pub mod macros;
+pub mod year_2022;
+
+pub type BoxedError = Box<dyn Error>;
+pub type DayReturnType = Result<(String, String), BoxedError>;
 
 extern crate simple_error;
-
-pub mod year_2022;
-pub type DayReturnType = Result<(String, String), Box<dyn Error>>;
+use macros::*;
 
 struct Year {
     year: u32,
@@ -22,25 +24,15 @@ impl Year {
         }
     }
 
-    fn get_day(&self, input: &str) -> Result<&Day, String> {
+    fn get_day(&self, input: &str) -> Result<&Day, BoxedError> {
         let input = input.replace(':', "");
         let input = if input.len() > 3 && &input.to_lowercase()[..3] == "day" {
-            match input.split(' ').nth(1) {
-                Some(value) => value,
-                None => {
-                    return Err(format!("Invalid Day \"{}\"", input));
-                }
-            }
+            unwrap_or_return_option!(input.split(' ').nth(1), "Invalid Day \"{}\"", input)
         } else {
             &input
         };
 
-        let parsed_input: u32 = match input.parse() {
-            Ok(value) => value,
-            Err(_) => {
-                return Err(format!("Invalid Day \"{}\"", input));
-            }
-        };
+        let parsed_input: u32 = unwrap_or_return!(input.parse(), "Invalid Day \"{}\"", input);
 
         for (i, day) in self.days.iter().enumerate() {
             if parsed_input == (i + 1) as u32 {
@@ -48,7 +40,7 @@ impl Year {
             }
         }
 
-        Err(format!("Couldn't Find Day {}", parsed_input))
+        return_err!("Couldn't Find Day {}", parsed_input);
     }
 
     fn create_years() -> Vec<Self> {
@@ -87,17 +79,17 @@ impl Year {
                     name: "Treetop Tree House".to_string(),
                     function: crate::year_2022::day_8::execute,
                 },
+                Day {
+                    name: "Rope Bridge".to_string(),
+                    function: crate::year_2022::day_9::execute,
+                },
             ],
         }]
     }
 
-    fn get_year<'a>(years: &'a [Year], input: &str) -> Result<&'a Year, String> {
-        let parsed_input: u32 = match input.parse() {
-            Ok(val) => val,
-            Err(_) => {
-                return Err(format!("\"{}\" Isn't A Valid Year!", input));
-            }
-        };
+    fn get_year<'a>(years: &'a [Year], input: &str) -> Result<&'a Year, BoxedError> {
+        let parsed_input: u32 =
+            unwrap_or_return!(input.parse(), "\"{}\" Isn't A Valid Year!", input);
 
         for (i, year) in years.iter().enumerate() {
             if parsed_input == (i + 1) as u32 || parsed_input == year.year {
@@ -105,7 +97,7 @@ impl Year {
             }
         }
 
-        Err(format!("Couldn't Find The Year {}!", input))
+        return_err!("Couldn't Find The Year \"{}\"!", input);
     }
 
     fn display_years(years: &[Year]) {
@@ -114,7 +106,7 @@ impl Year {
         }
     }
 
-    fn get_input(&self, day: &Day) -> Result<String, String> {
+    fn get_input(&self, day: &Day) -> Result<String, BoxedError> {
         let mut path = String::new();
         let mut day_num = 0;
 
@@ -127,19 +119,18 @@ impl Year {
         }
 
         if path.is_empty() {
-            return Err(format!(
-                "Couldn't Find Day \"{}\" In Year {}",
-                day.name, self.year
-            ));
+            return_err!("Couldn't Find Day \"{}\" In Year {}", day.name, self.year);
         };
 
-        match fs::read_to_string(&path) {
-            Ok(contents) => Ok(contents),
-            Err(e) => Err(format!(
-                "Failed To Open Input For Year {} Day {} (Path: \"{}\")\nReason: {}",
-                self.year, day_num, path, e,
-            )),
-        }
+        Ok(unwrap_or_return!(
+            fs::read_to_string(&path),
+            error: e,
+            "Failed To Open Input For Year {} Day {} (Path: \"{}\")\nReason: {}",
+            self.year,
+            day_num,
+            path,
+            e
+        ))
     }
 }
 
@@ -161,7 +152,7 @@ impl core::cmp::PartialEq for Day {
 }
 
 pub fn get_input(prompt: &str) -> String {
-    print!("{}", prompt);
+    print!("{prompt}");
     io::stdout().flush().unwrap();
 
     let mut input = String::new();
@@ -186,14 +177,11 @@ pub fn select_day() -> DayReturnType {
         Year::display_years(&years);
 
         let input = get_input("\nPlease Select A Year: ");
-        selected_year = match Year::get_year(&years, &input) {
-            Ok(year) => year,
-            Err(e) => {
-                cls();
-                eprintln!("{}", e);
-                continue;
-            }
-        };
+        selected_year = unwrap_or_else!(Year::get_year(&years, &input), error: e, {
+            cls();
+            eprintln!("{e}");
+            continue;
+        });
 
         break;
     }
@@ -206,26 +194,17 @@ pub fn select_day() -> DayReturnType {
         selected_year.display_days();
 
         let input = get_input("\nPlease Select A Day: ");
-        selected_day = match selected_year.get_day(&input) {
-            Ok(year) => year,
-            Err(e) => {
-                cls();
-                eprintln!("{}", e);
-                continue;
-            }
-        };
+        selected_day = unwrap_or_else!(selected_year.get_day(&input), error: e, {
+            cls();
+            eprintln!("{e}");
+            continue;
+        });
 
         break;
     }
 
     cls();
 
-    let input = match selected_year.get_input(selected_day) {
-        Ok(val) => val,
-        Err(e) => {
-            return Err(Box::new(SimpleError::new(e)));
-        }
-    };
-
+    let input = unwrap_or_return!(selected_year.get_input(selected_day));
     selected_day.execute(&input)
 }

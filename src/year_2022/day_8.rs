@@ -1,7 +1,7 @@
 use std::ops::Range;
 
-use simple_error::SimpleError;
-
+use crate::macros::*;
+use crate::BoxedError;
 use crate::DayReturnType;
 
 struct Trees {
@@ -11,7 +11,7 @@ struct Trees {
 }
 
 impl Trees {
-    fn new(lines: Vec<&str>) -> Result<Trees, String> {
+    fn new(lines: Vec<&str>) -> Result<Trees, BoxedError> {
         let width = lines[0].trim().len();
         let height = lines.len();
 
@@ -21,15 +21,11 @@ impl Trees {
             let mut line_heights = Vec::new();
 
             for height_char in line.trim().chars() {
-                let height = match height_char.to_digit(10) {
-                    Some(val) => val,
-                    None => {
-                        return Err(format!(
-                            "Failed to parse input! \"{}\" is not a valid height for a tree",
-                            height_char
-                        ))
-                    }
-                };
+                let height = unwrap_or_return_option!(
+                    height_char.to_digit(10),
+                    "Failed to parse input! \"{}\" is not a valid height for a tree",
+                    height_char
+                );
 
                 line_heights.push(height);
             }
@@ -135,15 +131,10 @@ pub fn execute(input: &str) -> DayReturnType {
     let lines: Vec<&str> = input.lines().collect();
 
     if lines.is_empty() {
-        return Err(Box::new(SimpleError::new(
-            "Input must have at least one line!",
-        )));
+        return_err!("Input must have at least one line!");
     }
 
-    let trees = match Trees::new(lines) {
-        Ok(val) => val,
-        Err(e) => return Err(Box::new(SimpleError::new(e))),
-    };
+    let trees = unwrap_or_return!(Trees::new(lines));
 
     let (visable_count, highest_scenic_score) =
         trees.get_heightest_scenic_score_and_count_visable_trees();

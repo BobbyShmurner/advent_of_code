@@ -1,6 +1,7 @@
 use itertools::Itertools;
-use simple_error::SimpleError;
 
+use crate::macros::*;
+use crate::BoxedError;
 use crate::DayReturnType;
 
 fn get_common_char(items: &[&str]) -> Option<char> {
@@ -28,33 +29,25 @@ fn get_char_priority(letter: &char) -> u32 {
     }
 }
 
-fn get_line_priority(line: &str) -> Result<u32, String> {
+fn get_line_priority(line: &str) -> Result<u32, BoxedError> {
     let (first_half, second_half) = line.trim().split_at(line.len() / 2);
     let halfs = vec![first_half, second_half];
 
-    let common_char = match get_common_char(&halfs) {
-        Some(val) => val,
-        None => {
-            return Err(format!(
-                "Failed to find a common character in the line \"{}\"",
-                line
-            ))
-        }
-    };
+    let common_char = unwrap_or_return_option!(
+        get_common_char(&halfs),
+        "Failed to find a common character in the line \"{}\"",
+        line
+    );
 
     Ok(get_char_priority(&common_char))
 }
 
-fn get_group_priority(group: &[&str]) -> Result<u32, String> {
-    let common_char = match get_common_char(group) {
-        Some(val) => val,
-        None => {
-            return Err(format!(
-                "Failed to find a common character in the group \"{:#?}\"",
-                group
-            ))
-        }
-    };
+fn get_group_priority(group: &[&str]) -> Result<u32, BoxedError> {
+    let common_char = unwrap_or_return_option!(
+        get_common_char(group),
+        "Failed to find a common character in the group \"{:#?}\"",
+        group
+    );
 
     Ok(get_char_priority(&common_char))
 }
@@ -65,17 +58,11 @@ pub fn execute(input: &str) -> DayReturnType {
     let input = input.trim();
 
     for line in input.lines() {
-        total_priority += match get_line_priority(line) {
-            Ok(val) => val,
-            Err(e) => return Err(Box::new(SimpleError::new(e))),
-        }
+        total_priority += unwrap_or_return!(get_line_priority(line))
     }
 
     for group in input.lines().chunks(3).into_iter() {
-        group_priority += match get_group_priority(&group.collect_vec()) {
-            Ok(val) => val,
-            Err(e) => return Err(Box::new(SimpleError::new(e))),
-        }
+        group_priority += unwrap_or_return!(get_group_priority(&group.collect_vec()))
     }
 
     Ok((total_priority.to_string(), group_priority.to_string()))

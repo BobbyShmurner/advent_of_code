@@ -1,5 +1,5 @@
-use simple_error::SimpleError;
-
+use crate::macros::*;
+use crate::BoxedError;
 use crate::DayReturnType;
 
 #[derive(Debug)]
@@ -8,15 +8,16 @@ struct Elf {
 }
 
 impl Elf {
-    fn new(lines: &str) -> Result<Elf, String> {
+    fn new(lines: &str) -> Result<Elf, BoxedError> {
         let mut total_calories = 0;
 
         for line in lines.split('\n') {
             let line = line.trim();
-            let calories: u32 = match line.parse() {
-                Ok(val) => val,
-                Err(_) => return Err(format!("\"{}\" isn't a valid value for calories!", line)),
-            };
+            let calories: u32 = unwrap_or_return!(
+                line.parse(),
+                "\"{}\" isn't a valid value for calories!",
+                line
+            );
 
             total_calories += calories;
         }
@@ -31,10 +32,7 @@ pub fn execute(input: &str) -> DayReturnType {
     let mut top_three_elfs: Vec<Elf> = Vec::new();
 
     for elf_data in input.split("\n\n") {
-        let new_elf = match Elf::new(elf_data) {
-            Ok(elf) => elf,
-            Err(e) => return Err(Box::new(SimpleError::new(e))),
-        };
+        let new_elf = unwrap_or_return!(Elf::new(elf_data));
 
         if top_three_elfs.is_empty() {
             top_three_elfs.push(new_elf);
