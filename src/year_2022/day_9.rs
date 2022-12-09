@@ -1,199 +1,231 @@
 use crate::macros::*;
+use crate::BoxedError;
 use crate::DayReturnType;
 
-// enum Direction {
-//     Up,
-//     Down,
-//     Left,
-//     Right,
-// }
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 
-// #[derive(Clone, Copy, PartialEq)]
-// struct Pos {
-//     x: i32,
-//     y: i32,
-// }
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Pos {
+    x: i32,
+    y: i32,
+}
 
-// impl Pos {
-//     fn new(x: i32, y: i32) -> Self {
-//         Self { x, y }
-//     }
+impl Pos {
+    fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
 
-//     fn zero() -> Self {
-//         Self { x: 0, y: 0 }
-//     }
+    fn zero() -> Self {
+        Self { x: 0, y: 0 }
+    }
 
-//     fn direction(dir: &Direction) -> Self {
-//         match *dir {
-//             Direction::Up => Self::new(0, 1),
-//             Direction::Down => Self::new(0, -1),
-//             Direction::Left => Self::new(-1, 0),
-//             Direction::Right => Self::new(1, 0),
-//         }
-//     }
+    fn signum(&self) -> Self {
+        Self {
+            x: self.x.signum(),
+            y: self.y.signum(),
+        }
+    }
 
-//     fn squared_distance(&self, other: &Self) -> i32 {
-//         if self == other {
-//             return 0;
-//         }
+    fn direction(dir: &Direction) -> Self {
+        match *dir {
+            Direction::Up => Self::new(0, 1),
+            Direction::Down => Self::new(0, -1),
+            Direction::Left => Self::new(-1, 0),
+            Direction::Right => Self::new(1, 0),
+        }
+    }
 
-//         (other.x - self.x).pow(2) + (other.y - self.y).pow(2)
-//     }
-// }
+    fn squared_distance(&self, other: &Self) -> i32 {
+        if self == other {
+            return 0;
+        }
 
-// impl std::ops::Add<Pos> for Pos {
-//     type Output = Pos;
+        (other.x - self.x).pow(2) + (other.y - self.y).pow(2)
+    }
+}
 
-//     fn add(self, rhs: Pos) -> Self::Output {
-//         Pos {
-//             x: self.x + rhs.x,
-//             y: self.y + rhs.y,
-//         }
-//     }
-// }
+impl std::ops::Add<Pos> for Pos {
+    type Output = Pos;
 
-// impl std::ops::AddAssign<Pos> for Pos {
-//     fn add_assign(&mut self, rhs: Pos) {
-//         self.x += rhs.x;
-//         self.y += rhs.y;
-//     }
-// }
+    fn add(self, rhs: Pos) -> Self::Output {
+        Pos {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
+    }
+}
 
-// impl std::ops::Mul<i32> for Pos {
-//     type Output = Pos;
+impl std::ops::Sub<Pos> for Pos {
+    type Output = Pos;
 
-//     fn mul(self, rhs: i32) -> Self::Output {
-//         Pos {
-//             x: self.x * rhs,
-//             y: self.y * rhs,
-//         }
-//     }
-// }
+    fn sub(self, rhs: Pos) -> Self::Output {
+        Pos {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
+    }
+}
 
-// struct Rope {
-//     positions: Vec<Pos>,
-//     unique_tail_positions: Vec<Pos>,
-// }
+impl std::ops::AddAssign<Pos> for Pos {
+    fn add_assign(&mut self, rhs: Pos) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
 
-// impl Rope {
-//     fn new(length: usize) -> Result<Self, String> {
-//         if length < 2 {
-//             return Err(format!(
-//                 "Cannot create a rope of size {}, ropes must have a length of at least 2!",
-//                 length
-//             ));
-//         }
+impl std::ops::Mul<i32> for Pos {
+    type Output = Pos;
 
-//         Ok(Self {
-//             positions: vec![Pos::zero(); length],
-//             unique_tail_positions: vec![Pos::zero()],
-//         })
-//     }
+    fn mul(self, rhs: i32) -> Self::Output {
+        Pos {
+            x: self.x * rhs,
+            y: self.y * rhs,
+        }
+    }
+}
 
-//     fn update_tail(&mut self) {
-//         if self.head.squared_distance(&self.tail) < 4 {
-//             return;
-//         }
+struct Rope {
+    parts: Vec<Pos>,
+    unique_tail_positions: Vec<Pos>,
+}
 
-//         self.tail = self.prev_head;
-//         if !self.unique_tail_positions.contains(&self.tail) {
-//             self.unique_tail_positions.push(self.tail);
-//         }
-//     }
+impl Rope {
+    fn new(length: usize) -> Result<Self, BoxedError> {
+        if length < 2 {
+            return_err!(
+                "Cannot create a rope of size {}, ropes must have a length of at least 2!",
+                length
+            );
+        }
 
-//     fn move_head(&mut self, direction: Direction, step_size: i32) {
-//         let step = Pos::direction(&direction);
+        Ok(Self {
+            parts: vec![Pos::zero(); length],
+            unique_tail_positions: vec![Pos::zero()],
+        })
+    }
 
-//         for _i in 0..step_size {
-//             self.prev_head = self.head;
-//             self.head += step;
+    fn move_part(&mut self, i: usize, step: Pos) {
+        {
+            let part = self.parts.get_mut(i).unwrap();
+            *part += step;
+        }
 
-//             self.update_tail();
-//         }
-//     }
+        let part = self.parts[i];
 
-//     fn move_using_str(&mut self, line: &str) -> Result<(), String> {
-//         let (lhs, rhs) = line.trim().split_at(1);
+        if i == self.parts.len() - 1 {
+            if !self.unique_tail_positions.contains(&part) {
+                self.unique_tail_positions.push(part);
+            }
 
-//         let direction = match lhs.to_uppercase().trim() {
-//             "U" => Direction::Up,
-//             "D" => Direction::Down,
-//             "L" => Direction::Left,
-//             "R" => Direction::Right,
-//             _ => return Err(format!("Invalid Direction \"{}\"", lhs.trim())),
-//         };
+            return;
+        }
 
-//         let step_size: i32 = match rhs.trim().parse() {
-//             Ok(val) => val,
-//             Err(_) => return Err(format!("Invalid Step Size \"{}\"", rhs.trim())),
-//         };
+        let next_part = self.parts[i + 1];
+        let square_distance = part.squared_distance(&next_part);
+        let delta = part - next_part;
 
-//         self.move_head(direction, step_size);
+        if square_distance < 4 {
+            return;
+        }
 
-//         Ok(())
-//     }
-// }
+        self.move_part(i + 1, delta.signum());
+    }
 
-// pub fn execute(input: &str) -> DayReturnType {
-//     let mut knot_part1 = match Rope::new(2) {
-//         Ok(val) => val,
-//         Err(e) => return Err(Box::new(SimpleError::new(e))),
-//     };
+    fn move_head(&mut self, direction: Direction, step_size: i32) {
+        let step = Pos::direction(&direction);
 
-//     let mut knot_part2 = match Rope::new(10) {
-//         Ok(val) => val,
-//         Err(e) => return Err(Box::new(SimpleError::new(e))),
-//     };
+        for _step_index in 0..step_size {
+            self.move_part(0, step);
+        }
+    }
 
-//     for line in input.trim().lines() {
-//         if let Err(e) = knot_part1.move_using_str(line.trim()) {
-//             return Err(Box::new(SimpleError::new(e)));
-//         }
+    fn move_using_str(&mut self, line: &str) -> Result<(), BoxedError> {
+        let (lhs, rhs) = line.trim().split_at(1);
 
-//         if let Err(e) = knot_part2.move_using_str(line.trim()) {
-//             return Err(Box::new(SimpleError::new(e)));
-//         }
-//     }
+        let direction = match lhs.to_uppercase().trim() {
+            "U" => Direction::Up,
+            "D" => Direction::Down,
+            "L" => Direction::Left,
+            "R" => Direction::Right,
+            _ => return_err!("Invalid Direction \"{}\"", lhs.trim()),
+        };
 
-//     Ok((
-//         knot_part1.unique_tail_positions.len().to_string(),
-//         knot_part2.unique_tail_positions.len().to_string(),
-//     ))
-// }
+        let step_size: i32 =
+            unwrap_or_return!(rhs.trim().parse(), "Invalid Step Size \"{}\"", rhs.trim());
 
-// #[cfg(test)]
-// mod tests {
-//     #[test]
-//     fn part1_example() {
-//         let input = r#"R 4
-// U 4
-// L 3
-// D 1
-// R 4
-// D 1
-// L 5
-// R 2"#;
+        self.move_head(direction, step_size);
 
-//         let result = super::execute(input).unwrap().0;
-//         assert_eq!("13", result);
-//     }
-
-//     #[test]
-//     fn part2_example() {
-//         let input = r#"R 4
-// U 4
-// L 3
-// D 1
-// R 4
-// D 1
-// L 5
-// R 2"#;
-
-//         let result = super::execute(input).unwrap().1;
-//         assert_eq!("Answer2", result);
-//     }
-// }
+        Ok(())
+    }
+}
 
 pub fn execute(input: &str) -> DayReturnType {
-    return_err!("Code For This Day Is Not Complete!")
+    let mut rope_part_1 = unwrap_or_return!(Rope::new(2));
+    let mut rope_part_2 = unwrap_or_return!(Rope::new(10));
+
+    for line in input.trim().lines() {
+        rope_part_1.move_using_str(line.trim())?;
+        rope_part_2.move_using_str(line.trim())?;
+    }
+
+    Ok((
+        rope_part_1.unique_tail_positions.len().to_string(),
+        rope_part_2.unique_tail_positions.len().to_string(),
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn part1_example() {
+        let input = r#"R 4
+U 4
+L 3
+D 1
+R 4
+D 1
+L 5
+R 2"#;
+
+        let result = super::execute(input).unwrap().0;
+        assert_eq!("13", result);
+    }
+
+    #[test]
+    fn part2_example() {
+        let test_data = vec![
+            (
+                r#"R 4
+U 4
+L 3
+D 1
+R 4
+D 1
+L 5
+R 2"#,
+                "1",
+            ),
+            (
+                r#"R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20"#,
+                "36",
+            ),
+        ];
+
+        for (input, answer) in test_data {
+            let result = super::execute(input).unwrap().1;
+            assert_eq!(answer, result);
+        }
+    }
 }
