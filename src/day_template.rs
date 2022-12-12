@@ -13,7 +13,7 @@ mod tests {
         let input = r#""#;
 
         let result = super::execute(input).unwrap().0;
-        assert_eq!("Answer1", result);
+        assert_eq!("Not Implemented", result);
     }
 
     #[test]
@@ -21,6 +21,6 @@ mod tests {
         let input = r#""#;
 
         let result = super::execute(input).unwrap().1;
-        assert_eq!("Answer2", result);
+        assert_eq!("Not Implemented", result);
     }
 }

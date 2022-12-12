@@ -90,6 +90,10 @@ impl Year {
                     name: "Cathode-Ray Tube".to_string(),
                     function: crate::year_2022::day_10::execute,
                 },
+                Day {
+                    name: "Monkey in the Middle".to_string(),
+                    function: crate::year_2022::day_11::execute,
+                },
             ],
         }]
     }
