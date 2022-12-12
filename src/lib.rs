@@ -86,6 +86,10 @@ impl Year {
                     name: "Rope Bridge".to_string(),
                     function: crate::year_2022::day_9::execute,
                 },
+                Day {
+                    name: "Cathode-Ray Tube".to_string(),
+                    function: crate::year_2022::day_10::execute,
+                },
             ],
         }]
     }

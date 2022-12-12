@@ -1,6 +1,5 @@
-use simple_error::SimpleError;
-
 use crate::macros::*;
+use crate::BoxedError;
 use crate::DayReturnType;
 
 pub fn execute(input: &str) -> DayReturnType {
