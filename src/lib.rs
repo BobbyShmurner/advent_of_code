@@ -94,6 +94,10 @@ impl Year {
                     name: "Monkey in the Middle".to_string(),
                     function: crate::year_2022::day_11::execute,
                 },
+                Day {
+                    name: "Hill Climbing Algorithm".to_string(),
+                    function: crate::year_2022::day_12::execute,
+                },
             ],
         }]
     }
