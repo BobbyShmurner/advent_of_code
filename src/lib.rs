@@ -133,15 +133,48 @@ impl Year {
             return_err!("Couldn't Find Day \"{}\" In Year {}", day.name, self.year);
         };
 
-        Ok(unwrap_or_return!(
+        let folder = path.split("/day_").into_iter().next().unwrap();
+        unwrap_or_return!(
+            fs::create_dir_all(folder),
+            error: e,
+            "Failed to create folder \"{}\"\nReason: {}",
+            path,
+            e
+        );
+
+        if !std::path::Path::new(&path).exists() {
+            unwrap_or_return!(
+                fs::OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(&path),
+                error: e,
+                "Failed to create file \"{}\"\nReason: {}",
+                path,
+                e
+            );
+        }
+
+        let contents = unwrap_or_return!(
             fs::read_to_string(&path),
             error: e,
-            "Failed To Open Input For Year {} Day {} (Path: \"{}\")\nReason: {}",
+            "Failed to open input for Year {}, Day {} (Path: \"{}\")\nReason: {}",
             self.year,
             day_num,
             path,
             e
-        ))
+        );
+
+        if contents.trim().is_empty() {
+            return_err!(
+                "Failed to load input for Year {}, Day {} (Path: \"{}\")\nReason: File is empty",
+                self.year,
+                day_num,
+                path,
+            );
+        }
+
+        Ok(contents)
     }
 }
 
