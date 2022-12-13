@@ -4,18 +4,20 @@ use crate::DayReturnType;
 
 use regex::Regex;
 
+#[derive(Clone)]
 enum Operator {
     Addition,
     Multiplication,
 }
 
+#[derive(Clone)]
 struct Monkey {
-    items: Vec<u32>,
+    items: Vec<u128>,
     operator: Operator,
-    operand: u32,
-    test: u32,
+    operand: u128,
+    test: u128,
     throw_monkeys: (usize, usize),
-    inspects: u32,
+    inspects: u128,
 }
 
 impl Monkey {
@@ -31,7 +33,7 @@ impl Monkey {
 
         for item in starting_items.trim().split(", ") {
             items.push(unwrap_or_return!(
-                item.parse::<u32>(),
+                item.parse::<u128>(),
                 "\"{}\" is not a valid starting item!",
                 item
             ));
@@ -47,13 +49,13 @@ impl Monkey {
             0
         } else {
             unwrap_or_return!(
-                operand.trim().parse::<u32>(),
+                operand.trim().parse::<u128>(),
                 "Invalid operand \"{}\"",
                 operand
             )
         };
 
-        let test = unwrap_or_return!(test.trim().parse::<u32>(), "Invalid test \"{}\"", test);
+        let test = unwrap_or_return!(test.trim().parse::<u128>(), "Invalid test \"{}\"", test);
 
         let true_monkey = unwrap_or_return!(
             true_monkey.trim().parse::<usize>(),
@@ -77,27 +79,36 @@ impl Monkey {
         })
     }
 
-    fn get_new_worry_level(&self, item: u32) -> u32 {
+    fn get_new_worry_level(&self, item: u128, managed: bool, lcm: u128) -> u128 {
         let operand = if self.operand == 0 {
             item
         } else {
             self.operand
         };
 
-        let new_worry = match self.operator {
+        let mut new_worry = match self.operator {
             Operator::Addition => item + operand,
             Operator::Multiplication => item * operand,
         };
 
-        new_worry / 3
+        if managed {
+            new_worry /= 3
+        }
+
+        new_worry % lcm
     }
 
-    fn throw_all_items(monkey_index: usize, monkeys: &mut [Monkey]) -> Result<(), BoxedError> {
+    fn throw_all_items(
+        monkey_index: usize,
+        monkeys: &mut [Monkey],
+        managed: bool,
+        lcm: u128,
+    ) -> Result<(), BoxedError> {
         let mut items_to_move = Vec::new();
         let monkey = &mut monkeys[monkey_index];
 
         for item in &monkey.items {
-            let new_worry = monkey.get_new_worry_level(*item);
+            let new_worry = monkey.get_new_worry_level(*item, managed, lcm);
 
             let target_monkey_index = if new_worry % monkey.test == 0 {
                 monkey.throw_monkeys.0
@@ -120,15 +131,15 @@ impl Monkey {
         Ok(())
     }
 
-    fn complete_round(monkeys: &mut [Monkey]) -> Result<(), BoxedError> {
+    fn complete_round(monkeys: &mut [Monkey], managed: bool, lcm: u128) -> Result<(), BoxedError> {
         for i in 0..monkeys.len() {
-            Monkey::throw_all_items(i, monkeys)?;
+            Monkey::throw_all_items(i, monkeys, managed, lcm)?;
         }
 
         Ok(())
     }
 
-    fn get_monkey_business(monkeys: &[Monkey]) -> Result<u32, BoxedError> {
+    fn get_monkey_business(monkeys: &[Monkey]) -> Result<u128, BoxedError> {
         let mut inspects = Vec::new();
 
         for monkey in monkeys {
@@ -151,25 +162,35 @@ pub fn execute(input: &str) -> DayReturnType {
     let re = Regex::new(r"Monkey (?P<monkey_num>\d+):\n  Starting items: (?P<starting_items>(?:\d+, )*\d+)\n  Operation: new = old (?P<operator>[+*]) (?P<operand>(?:\d+|old))\n  Test: divisible by (?P<test>\d+)\n    If true: throw to monkey (?P<true_monkey>\d+)\n    If false: throw to monkey (?P<false_monkey>\d+)").unwrap();
 
     let mut monkeys = Vec::new();
+    let mut lcm = 1;
 
     for caps in re.captures_iter(input) {
-        monkeys.push(Monkey::new(
+        let monkey = Monkey::new(
             &caps["starting_items"],
             &caps["operator"],
             &caps["operand"],
             &caps["test"],
             &caps["true_monkey"],
             &caps["false_monkey"],
-        )?);
+        )?;
+
+        lcm *= monkey.test;
+        monkeys.push(monkey);
     }
 
+    let mut monkeys_unmanaged = monkeys.clone();
+
     for _i in 0..20 {
-        Monkey::complete_round(&mut monkeys)?;
+        Monkey::complete_round(&mut monkeys, true, lcm)?;
+    }
+
+    for _i in 0..10000 {
+        Monkey::complete_round(&mut monkeys_unmanaged, false, lcm)?;
     }
 
     Ok((
         Monkey::get_monkey_business(&monkeys)?.to_string(),
-        "Not Implemented".to_string(),
+        Monkey::get_monkey_business(&monkeys_unmanaged)?.to_string(),
     ))
 }
 
@@ -240,6 +261,6 @@ Monkey 3:
     If false: throw to monkey 1"#;
 
         let result = super::execute(input).unwrap().1;
-        assert_eq!("Not Implemented", result);
+        assert_eq!("2713310158", result);
     }
 }
