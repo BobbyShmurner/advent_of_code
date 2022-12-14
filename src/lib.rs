@@ -98,6 +98,10 @@ impl Year {
                     name: "Hill Climbing Algorithm".to_string(),
                     function: crate::year_2022::day_12::execute,
                 },
+                Day {
+                    name: "Distress Signal".to_string(),
+                    function: crate::year_2022::day_13::execute,
+                },
             ],
         }]
     }
