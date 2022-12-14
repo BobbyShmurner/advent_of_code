@@ -211,8 +211,6 @@ pub fn execute(input: &str) -> DayReturnType {
         .unwrap()
         + 1;
 
-    println!("{packets:#?}");
-
     Ok((correct_order.to_string(), decoder_key.to_string()))
 }
 
