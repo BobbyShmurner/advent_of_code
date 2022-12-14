@@ -14,7 +14,7 @@ struct PacketInfo {
 
 impl PartialOrd for PacketInfo {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Packet::are_packets_ordered_correctly(&self.packets, &other.packets)
+        Packet::compare(&self.packets, &other.packets)
     }
 }
 
@@ -52,6 +52,15 @@ impl PacketInfo {
 enum Packet {
     Num(usize),
     Packet(Vec<Packet>),
+}
+
+impl PartialOrd for Packet {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Packet::Packet(left), Packet::Packet(right)) => Packet::compare(left, right),
+            _ => None,
+        }
+    }
 }
 
 impl Packet {
@@ -106,7 +115,7 @@ impl Packet {
         Ok(Packet::Packet(packet))
     }
 
-    fn are_packets_ordered_correctly(left: &Vec<Self>, right: &Vec<Self>) -> Option<Ordering> {
+    fn compare(left: &Vec<Packet>, right: &Vec<Packet>) -> Option<Ordering> {
         let mut i: i32 = -1;
 
         loop {
@@ -154,7 +163,7 @@ impl Packet {
                     };
                 }
                 (Packet::Packet(left), Packet::Packet(right)) => {
-                    let result = Packet::are_packets_ordered_correctly(left, right);
+                    let result = Packet::compare(left, right);
 
                     if result.is_none() {
                         continue;
@@ -187,9 +196,7 @@ pub fn execute(input: &str) -> DayReturnType {
         packets.push(left.clone());
         packets.push(right.clone());
 
-        if let Some(Ordering::Less) =
-            Packet::are_packets_ordered_correctly(&left.packets, &right.packets)
-        {
+        if let Some(Ordering::Less) = left.partial_cmp(&right) {
             correct_order += i as u32 + 1;
         }
     }
