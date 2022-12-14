@@ -2,14 +2,53 @@ use crate::macros::*;
 use crate::BoxedError;
 use crate::DayReturnType;
 
-#[derive(PartialEq)]
-enum IsCorrectOrder {
-    Correct,
-    Incorrect,
-    Unsure,
+use std::cmp::*;
+
+#[derive(Clone, Eq, PartialEq)]
+struct PacketInfo {
+    packets: Vec<Packet>,
+    input_str: String,
+    stripped_str: String,
+    depth: usize,
 }
 
-#[derive(Debug)]
+impl PartialOrd for PacketInfo {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Packet::are_packets_ordered_correctly(&self.packets, &other.packets)
+    }
+}
+
+impl std::fmt::Debug for PacketInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.input_str)
+    }
+}
+
+impl PacketInfo {
+    fn parse(line: &str) -> Result<Self, BoxedError> {
+        let input_str = line.trim();
+
+        let packet = match Packet::parse(input_str)? {
+            Packet::Packet(val) => val,
+            _ => return_err!("Invalid Packet \"{}\"", input_str),
+        };
+
+        let depth = input_str.matches('[').count();
+        let stripped_str = input_str
+            .replace(['[', ']', ','], "")
+            .split_whitespace()
+            .collect();
+
+        Ok(Self {
+            input_str: input_str.to_string(),
+            packets: packet,
+            stripped_str,
+            depth,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 enum Packet {
     Num(usize),
     Packet(Vec<Packet>),
@@ -67,10 +106,7 @@ impl Packet {
         Ok(Packet::Packet(packet))
     }
 
-    fn are_packets_ordered_correctly(
-        left: &mut Vec<Self>,
-        right: &mut Vec<Self>,
-    ) -> IsCorrectOrder {
+    fn are_packets_ordered_correctly(left: &Vec<Self>, right: &Vec<Self>) -> Option<Ordering> {
         let mut i: i32 = -1;
 
         loop {
@@ -78,18 +114,32 @@ impl Packet {
 
             if i as usize >= left.len() {
                 return if left.len() == right.len() {
-                    IsCorrectOrder::Unsure
+                    None
                 } else {
-                    IsCorrectOrder::Correct
+                    Some(Ordering::Less)
                 };
             }
 
             if i as usize >= right.len() {
-                return IsCorrectOrder::Incorrect;
+                return Some(Ordering::Greater);
             }
 
-            let left_item = &mut left[i as usize];
-            let right_item = &mut right[i as usize];
+            let left_item = &left[i as usize];
+            let right_item = &right[i as usize];
+
+            let new_list;
+
+            let (left_item, right_item) = match (left_item, right_item) {
+                (Packet::Num(num), Packet::Packet(_)) => {
+                    new_list = Packet::Packet(vec![Packet::Num(*num)]);
+                    (&new_list, right_item)
+                }
+                (Packet::Packet(_), Packet::Num(num)) => {
+                    new_list = Packet::Packet(vec![Packet::Num(*num)]);
+                    (left_item, &new_list)
+                }
+                _ => (left_item, right_item),
+            };
 
             match (left_item, right_item) {
                 (Packet::Num(left), Packet::Num(right)) => {
@@ -98,30 +148,21 @@ impl Packet {
                     }
 
                     return if left < right {
-                        IsCorrectOrder::Correct
+                        Some(Ordering::Less)
                     } else {
-                        IsCorrectOrder::Incorrect
+                        Some(Ordering::Greater)
                     };
-                }
-                (Packet::Num(num), Packet::Packet(_)) => {
-                    left[i as usize] = Packet::Packet(vec![Packet::Num(*num)]);
-                    i -= 1;
-                    continue;
-                }
-                (Packet::Packet(_), Packet::Num(num)) => {
-                    right[i as usize] = Packet::Packet(vec![Packet::Num(*num)]);
-                    i -= 1;
-                    continue;
                 }
                 (Packet::Packet(left), Packet::Packet(right)) => {
                     let result = Packet::are_packets_ordered_correctly(left, right);
 
-                    if result == IsCorrectOrder::Unsure {
+                    if result.is_none() {
                         continue;
                     }
 
                     return result;
                 }
+                _ => return None,
             }
         }
     }
@@ -129,6 +170,8 @@ impl Packet {
 
 pub fn execute(input: &str) -> DayReturnType {
     let mut correct_order: u32 = 0;
+    let mut packets = Vec::new();
+
     for (i, pair) in input
         .trim()
         .split("\n\n")
@@ -138,24 +181,39 @@ pub fn execute(input: &str) -> DayReturnType {
     {
         let pair: Vec<&str> = pair.trim().lines().collect();
 
-        let mut left = if let Packet::Packet(left) = Packet::parse(pair[0])? {
-            left
-        } else {
-            return_err!("Invalid packet \"{:?}\"", pair[0]);
-        };
+        let left = PacketInfo::parse(pair[0])?;
+        let right = PacketInfo::parse(pair[1])?;
 
-        let mut right = if let Packet::Packet(right) = Packet::parse(pair[1])? {
-            right
-        } else {
-            return_err!("Invalid packet \"{:?}\"", pair[1]);
-        };
+        packets.push(left.clone());
+        packets.push(right.clone());
 
-        if Packet::are_packets_ordered_correctly(&mut left, &mut right) == IsCorrectOrder::Correct {
+        if let Some(Ordering::Less) =
+            Packet::are_packets_ordered_correctly(&left.packets, &right.packets)
+        {
             correct_order += i as u32 + 1;
         }
     }
 
-    Ok((correct_order.to_string(), "Not Implemented".to_string()))
+    packets.push(PacketInfo::parse("[[2]]")?);
+    packets.push(PacketInfo::parse("[[6]]")?);
+
+    packets.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    let mut decoder_key = packets
+        .iter()
+        .position(|packet| packet.input_str == "[[2]]")
+        .unwrap()
+        + 1;
+
+    decoder_key *= packets
+        .iter()
+        .position(|packet| packet.input_str == "[[6]]")
+        .unwrap()
+        + 1;
+
+    println!("{packets:#?}");
+
+    Ok((correct_order.to_string(), decoder_key.to_string()))
 }
 
 #[cfg(test)]
@@ -217,6 +275,6 @@ mod tests {
 [1,[2,[3,[4,[5,6,0]]]],8,9]"#;
 
         let result = super::execute(input).unwrap().1;
-        assert_eq!("Not Implemented", result);
+        assert_eq!("140", result);
     }
 }
