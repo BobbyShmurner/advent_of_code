@@ -4,7 +4,7 @@ use crate::BoxedError;
 use crate::DayReturnType;
 
 use std::collections::HashMap;
-use std::io::Write;
+use std::time::Instant;
 
 struct Grid {
     start_points: Vec<(usize, usize)>,
@@ -64,7 +64,7 @@ impl Grid {
         })
     }
 
-    fn get_valid_moves(&self, pos: (usize, usize)) -> Vec<(usize, usize)> {
+    fn get_valid_moves(&self, pos: &(usize, usize)) -> Vec<(usize, usize)> {
         const MOVE_OFFSETS: [(i32, i32); 4] = [(0, 1), (0, -1), (-1, 0), (1, 0)];
 
         let mut valid_moves = Vec::new();
@@ -85,7 +85,8 @@ impl Grid {
             );
 
             let offset_elevation = self.elevations[offset_pos.1][offset_pos.0];
-            if elevation + 1 < offset_elevation {
+
+            if offset_elevation + 1 < elevation {
                 continue;
             }
 
@@ -95,75 +96,51 @@ impl Grid {
         valid_moves
     }
 
-    fn get_path_dist_recurse(
-        &self,
-        pos: (usize, usize),
-        path_lens: &mut HashMap<(usize, usize), usize>,
-        length: usize,
-    ) {
-        for valid_move in self.get_valid_moves(pos) {
-            if let Some(dist_to_end) = path_lens.get(&self.end) {
-                if length >= *dist_to_end {
-                    return;
-                }
-            }
-
-            if let Some(current_dist) = path_lens.get(&valid_move) {
-                if length >= *current_dist {
-                    continue;
-                }
-            }
-
-            path_lens.insert(valid_move, length);
-
-            if valid_move == self.end {
-                return;
-            }
-
-            self.get_path_dist_recurse(valid_move, path_lens, length + 1);
-        }
-    }
-
-    fn get_shortest_path(&self, start: (usize, usize), shortest: usize) -> usize {
-        let mut path_lens = HashMap::new();
-
-        path_lens.insert(start, 0);
-        path_lens.insert(self.end, shortest);
-
-        self.get_path_dist_recurse(start, &mut path_lens, 1);
-
-        path_lens[&self.end]
-    }
-
     fn get_shortest_paths(&self) -> (usize, usize) {
-        let mut shortest_from_start = usize::MAX;
-        let mut shortest_overall = usize::MAX;
+        let mut queue = vec![self.end];
+        let mut visited = HashMap::new();
 
-        for (i, start) in self.start_points.iter().enumerate() {
-            print!(
-                "Calculating Shortest Path... [{}/{} - {:.2}%]\r",
-                i + 1,
-                self.start_points.len(),
-                (i + 1) as f32 / self.start_points.len() as f32 * 100.0
-            );
-            std::io::stdout().flush().unwrap();
+        visited.insert(self.end, 0_usize);
 
-            shortest_overall = self.get_shortest_path(*start, shortest_overall);
+        while !queue.is_empty() {
+            let pos = queue.pop().unwrap();
+            let dist = visited[&pos];
 
-            if i == 0 {
-                shortest_from_start = shortest_overall;
+            for valid_move in self.get_valid_moves(&pos) {
+                if let std::collections::hash_map::Entry::Vacant(e) = visited.entry(valid_move) {
+                    e.insert(dist + 1);
+                    queue.insert(0, valid_move);
+                }
             }
         }
 
-        (shortest_from_start, shortest_overall)
+        let dist_from_start = visited[&self.start_points[0]];
+        let mut shortest_dist = usize::MAX;
+
+        for pos in self.start_points.iter().skip(1) {
+            if let Some(dist) = visited.get(pos) {
+                if dist < &shortest_dist {
+                    shortest_dist = *dist;
+                }
+            }
+        }
+
+        (dist_from_start, shortest_dist)
     }
 }
 
 pub fn execute(input: &str) -> DayReturnType {
     let grid = Grid::new(input)?;
 
+    let start = Instant::now();
+
     let (shortest_from_start, shortest_overall) = grid.get_shortest_paths();
     clear().unwrap();
+
+    println!(
+        "Completed In {:.2} Seconds!\n",
+        Instant::now().duration_since(start).as_secs_f32()
+    );
 
     Ok((
         shortest_from_start.to_string(),
