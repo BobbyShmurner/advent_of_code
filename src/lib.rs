@@ -102,6 +102,10 @@ impl Year {
                     name: "Distress Signal".to_string(),
                     function: crate::year_2022::day_13::execute,
                 },
+                Day {
+                    name: "Regolith Reservoir".to_string(),
+                    function: crate::year_2022::day_14::execute,
+                },
             ],
         }]
     }
