@@ -254,8 +254,9 @@ impl Grid {
 
 impl std::fmt::Display for Grid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for y in self.min.y - 1..=self.max.y + 1 {
-            for x in self.min.x - 1..=self.max.x + 1 {
+        let mut count = 0;
+        for y in self.min.y - 20..=self.max.y + 20 {
+            for x in self.min.x - 20..=self.max.x + 20 {
                 let point = Point::new(x, y);
 
                 if point.x == 500 && point.y == 0 {
@@ -264,12 +265,17 @@ impl std::fmt::Display for Grid {
                     f.write_str("#")?;
                 } else if self.sand.contains(&point) {
                     f.write_str("o")?;
+                    count += 1;
+                } else if point.y == self.max.y {
+                    f.write_str("~")?;
                 } else {
                     f.write_str(" ")?;
                 }
             }
             f.write_str("\n")?;
         }
+
+        assert_eq!(count, 1215);
 
         Ok(())
     }
@@ -288,7 +294,7 @@ pub fn execute(input: &str) -> DayReturnType {
     //     }
     // }
 
-    // let mut file = std::fs::File::create("day_14_cave.txt")?;
+    let mut file = std::fs::File::create("day_14_cave.txt")?;
     loop {
         if grid.add_sand() {
             break;
@@ -299,6 +305,8 @@ pub fn execute(input: &str) -> DayReturnType {
         //     "{grid}\n\n-----------------------------------------------------------\n\n"
         // )?;
     }
+
+    write!(file, "{grid}")?;
 
     Ok((grid.sand.len().to_string(), "Not Implemented".to_string()))
 }
