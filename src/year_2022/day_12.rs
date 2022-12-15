@@ -4,7 +4,6 @@ use crate::BoxedError;
 use crate::DayReturnType;
 
 use std::collections::HashMap;
-use std::time::Instant;
 
 struct Grid {
     start_points: Vec<(usize, usize)>,
@@ -132,15 +131,8 @@ impl Grid {
 pub fn execute(input: &str) -> DayReturnType {
     let grid = Grid::new(input)?;
 
-    let start = Instant::now();
-
     let (shortest_from_start, shortest_overall) = grid.get_shortest_paths();
     clear().unwrap();
-
-    println!(
-        "Completed In {:.2} Seconds!\n",
-        Instant::now().duration_since(start).as_secs_f32()
-    );
 
     Ok((
         shortest_from_start.to_string(),
