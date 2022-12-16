@@ -3,6 +3,7 @@ use std::fs;
 use std::io;
 use std::io::Read;
 use std::io::Write;
+use std::time::Instant;
 
 use clearscreen::clear;
 
@@ -227,7 +228,7 @@ pub fn pause(prompt: &str) {
     let _ = stdin.read(&mut [0u8]).unwrap();
 }
 
-pub fn select_day() -> DayReturnType {
+pub fn select_day() -> Result<(String, String, u128), BoxedError> {
     let years = Year::create_years();
 
     let selected_year;
@@ -267,5 +268,12 @@ pub fn select_day() -> DayReturnType {
     clear().unwrap();
 
     let input = unwrap_or_return!(selected_year.get_input(selected_day));
-    selected_day.execute(&input)
+    let start_time = Instant::now();
+    let (answer_1, answer_2) = selected_day.execute(&input)?;
+
+    Ok((
+        answer_1,
+        answer_2,
+        Instant::now().duration_since(start_time).as_micros(),
+    ))
 }
