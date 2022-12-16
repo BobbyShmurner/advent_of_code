@@ -2,22 +2,13 @@ use crate::macros::*;
 use crate::BoxedError;
 use crate::DayReturnType;
 
-use std::fs::File;
-use std::io::prelude::*;
+use std::collections::HashMap;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq)]
 struct Point {
     x: i32,
     y: i32,
 }
-
-impl std::cmp::PartialEq for Point {
-    fn eq(&self, other: &Self) -> bool {
-        self.x == other.x && self.y == other.y
-    }
-}
-
-impl std::cmp::Eq for Point {}
 
 impl Point {
     fn new(x: i32, y: i32) -> Self {
@@ -118,7 +109,7 @@ impl std::iter::Iterator for Line {
     type Item = Point;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.point_on_line == *self.points.last().unwrap() {
+        if self.target_point >= self.points.len() {
             return None;
         }
 
@@ -147,19 +138,24 @@ impl std::fmt::Display for Line {
     }
 }
 
+enum Tile {
+    Rock,
+    Sand,
+}
+
 struct Grid {
-    walls: Vec<Point>,
-    sand: Vec<Point>,
+    points: HashMap<Point, Tile>,
+    resting: usize,
     min: Point,
     max: Point,
 }
 
 impl Grid {
     fn new(points: Vec<Point>) -> Grid {
-        let mut min = Point::new(i32::MAX, i32::MAX);
-        let mut max = Point::new(i32::MIN, i32::MIN);
+        let mut min = Point::new(500, 0);
+        let mut max = Point::new(500, 0);
 
-        let mut unique_points = Vec::new();
+        let mut points_map = HashMap::<Point, Tile>::new();
 
         for point in points.iter() {
             if point.x < min.x {
@@ -178,16 +174,18 @@ impl Grid {
                 max.y = point.y;
             }
 
-            if !unique_points.contains(point) {
-                unique_points.push(*point);
+            if !points_map.contains_key(point) {
+                points_map.insert(*point, Tile::Rock);
             }
         }
 
+        max.y += 2;
+
         Grid {
-            walls: unique_points,
+            points: points_map,
             min,
+            resting: 0,
             max,
-            sand: Vec::new(),
         }
     }
 
@@ -204,7 +202,8 @@ impl Grid {
 
     fn try_step_point(&mut self, point: &mut Point, step: Point) -> bool {
         let new_point = *point + step;
-        if self.walls.contains(&new_point) || self.sand.contains(&new_point) {
+
+        if self.points.contains_key(&new_point) || new_point.y == self.max.y {
             return false;
         }
 
@@ -213,69 +212,59 @@ impl Grid {
     }
 
     /// Returns `true` if sand falls off into the abyss
-    fn add_sand(&mut self) -> bool {
+    fn add_sand(&mut self) -> (bool, bool) {
         let mut point = Point::new(500, 0);
+        let mut hit_floor = false;
 
         loop {
-            // println!("--------------------------\nPoint: {}", point);
-
-            if point.y > self.max.y {
-                return true;
+            if point.y > self.max.y - 2 {
+                hit_floor = true;
             }
 
-            let new_point = point + Point::new(0, 1);
-            // println!("{}", new_point);
-            if !self.walls.contains(&new_point) && !self.sand.contains(&new_point) {
-                point += Point::new(0, 1);
+            if self.try_step_point(&mut point, Point::new(0, 1)) {
                 continue;
             }
 
-            let new_point = point + Point::new(-1, 1);
-            // println!("{}", new_point);
-            if !self.walls.contains(&new_point) && !self.sand.contains(&new_point) {
-                point += Point::new(-1, 1);
+            if self.try_step_point(&mut point, Point::new(-1, 1)) {
                 continue;
             }
 
-            let new_point = point + Point::new(1, 1);
-            // println!("{}", new_point);
-            if !self.walls.contains(&new_point) && !self.sand.contains(&new_point) {
-                point += Point::new(1, 1);
+            if self.try_step_point(&mut point, Point::new(1, 1)) {
                 continue;
             }
 
             break;
         }
 
-        self.sand.push(point);
-        false
+        self.points.insert(point, Tile::Sand);
+        self.resting += 1;
+
+        (hit_floor, point.y == 0)
     }
 }
 
 impl std::fmt::Display for Grid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut count = 0;
-        for y in self.min.y - 20..=self.max.y + 20 {
-            for x in self.min.x - 20..=self.max.x + 20 {
+        for y in self.min.y - 10..=self.max.y + 10 {
+            f.write_str("\n")?;
+
+            for x in self.min.x - 10..=self.max.x + 10 {
                 let point = Point::new(x, y);
 
                 if point.x == 500 && point.y == 0 {
                     f.write_str("+")?;
-                } else if self.walls.contains(&point) {
+                } else if let Some(tile) = self.points.get(&point) {
+                    match tile {
+                        Tile::Rock => f.write_str("#")?,
+                        Tile::Sand => f.write_str("o")?,
+                    };
+                } else if point.y >= self.max.y {
                     f.write_str("#")?;
-                } else if self.sand.contains(&point) {
-                    f.write_str("o")?;
-                    count += 1;
-                } else if point.y == self.max.y {
-                    f.write_str("~")?;
                 } else {
                     f.write_str(" ")?;
                 }
             }
-            f.write_str("\n")?;
         }
-
-        assert_eq!(count, 1215);
 
         Ok(())
     }
@@ -283,32 +272,21 @@ impl std::fmt::Display for Grid {
 
 pub fn execute(input: &str) -> DayReturnType {
     let mut grid = Grid::parse(input)?;
+    let mut hit_floor_at = 0;
 
-    // let mut file = std::fs::File::create("day_14_lines.txt")?;
-    // for line in input.trim().lines() {
-    //     let line_parsed = Line::parse(line)?;
-    // write!(file, "--------------------\n{line}\n{line_parsed}\n\n")?;
-
-    // for point in line_parsed {
-    //         write!(file, "{point}\n")?;
-    //     }
-    // }
-
-    let mut file = std::fs::File::create("day_14_cave.txt")?;
     loop {
-        if grid.add_sand() {
-            break;
+        let (hit_floor, finished) = grid.add_sand();
+
+        if hit_floor && hit_floor_at == 0 {
+            hit_floor_at = grid.resting - 1;
         }
 
-        // write!(
-        //     file,
-        //     "{grid}\n\n-----------------------------------------------------------\n\n"
-        // )?;
+        if finished {
+            break;
+        }
     }
 
-    write!(file, "{grid}")?;
-
-    Ok((grid.sand.len().to_string(), "Not Implemented".to_string()))
+    Ok((hit_floor_at.to_string(), grid.resting.to_string()))
 }
 
 #[cfg(test)]
@@ -328,6 +306,6 @@ mod tests {
 503,4 -> 502,4 -> 502,9 -> 494,9"#;
 
         let result = super::execute(input).unwrap().1;
-        assert_eq!("Not Implemented", result);
+        assert_eq!("93", result);
     }
 }
