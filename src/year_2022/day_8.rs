@@ -21,7 +21,7 @@ impl Trees {
             let mut line_heights = Vec::new();
 
             for height_char in line.trim().chars() {
-                let height = unwrap_or_return_option!(
+                let height = unwrap_option_or_return!(
                     height_char.to_digit(10),
                     "Failed to parse input! \"{}\" is not a valid height for a tree",
                     height_char

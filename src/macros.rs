@@ -20,10 +20,8 @@ macro_rules! convert_to_err {
         {
         }
 
-        trait CreateErrFromString {
+        trait CreateErrFromString: std::fmt::Display {
             fn convert_to_error(&self) -> Box<simple_error::SimpleError>
-            where
-                Self: std::fmt::Display,
             {
                 err_from_str!("{}", self)
             }
@@ -45,7 +43,7 @@ macro_rules! return_err {
     };
 }
 
-macro_rules! unwrap_or_else_custom {
+macro_rules! unwrap_custom_or_else {
     ($val:expr, $ok:tt, $err:pat, $code:block) => {
         match $val {
             $ok(val) => val,
@@ -54,9 +52,9 @@ macro_rules! unwrap_or_else_custom {
     };
 }
 
-macro_rules! unwrap_or_return_custom {
+macro_rules! unwrap_custom_or_return {
     ($val:expr, $ok:tt, $err:pat, $($args:expr),*) => {
-		unwrap_or_else_custom!($val, $ok, $err, {
+		unwrap_custom_or_else!($val, $ok, $err, {
 			return_err!($($args),*)
 		})
 	};
@@ -64,42 +62,42 @@ macro_rules! unwrap_or_return_custom {
 
 macro_rules! unwrap_or_else {
     ($val:expr, error: $err:tt, $code:block) => {
-        unwrap_or_else_custom!($val, Ok, Err($err), $code)
+        unwrap_custom_or_else!($val, Ok, Err($err), $code)
     };
     ($val:expr, $code:block) => {
-        unwrap_or_else_custom!($val, Ok, Err(_), $code)
+        unwrap_custom_or_else!($val, Ok, Err(_), $code)
     };
 }
 
 macro_rules! unwrap_or_return {
 	($val:expr, error: $err:tt, $($args:expr),*) => {
-		unwrap_or_return_custom!($val, Ok, Err($err), $($args),*)
+		unwrap_custom_or_return!($val, Ok, Err($err), $($args),*)
 	};
     ($val:expr, $($args:expr),*) => {
-		unwrap_or_return_custom!($val, Ok, Err(_), $($args),*)
+		unwrap_custom_or_return!($val, Ok, Err(_), $($args),*)
 	};
 	($val:expr) => {
-		unwrap_or_return_custom!($val, Ok, Err(e), e)
+		unwrap_custom_or_return!($val, Ok, Err(e), e)
 	};
 }
 
-macro_rules! _unwrap_or_else_option {
+macro_rules! _unwrap_option_or_else {
     ($val:expr, $($args:expr),*) => {
-		unwrap_or_else_custom!($val, Some, None, $($args),*)
+		unwrap_custom_or_else!($val, Some, None, $($args),*)
 	};
 }
 
-macro_rules! unwrap_or_return_option {
+macro_rules! unwrap_option_or_return {
     ($val:expr, $($args:expr),*) => {
-		unwrap_or_return_custom!($val, Some, None, $($args),*)
+		unwrap_custom_or_return!($val, Some, None, $($args),*)
 	};
 }
 
 pub(crate) use convert_to_err;
 pub(crate) use err_from_str;
 pub(crate) use return_err;
+pub(crate) use unwrap_custom_or_else;
+pub(crate) use unwrap_custom_or_return;
+pub(crate) use unwrap_option_or_return;
 pub(crate) use unwrap_or_else;
-pub(crate) use unwrap_or_else_custom;
 pub(crate) use unwrap_or_return;
-pub(crate) use unwrap_or_return_custom;
-pub(crate) use unwrap_or_return_option;

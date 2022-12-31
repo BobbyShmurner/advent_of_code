@@ -122,7 +122,7 @@ impl Monkey {
 
         for (item, i) in items_to_move {
             let target_monkey =
-                unwrap_or_return_option!(monkeys.get_mut(i), "Invalid monkey \"{}\"", i);
+                unwrap_option_or_return!(monkeys.get_mut(i), "Invalid monkey \"{}\"", i);
 
             target_monkey.items.push(item);
         }

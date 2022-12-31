@@ -31,7 +31,7 @@ impl Year {
     fn get_day(&self, input: &str) -> Result<&Day, BoxedError> {
         let input = input.replace(':', "");
         let input = if input.len() > 3 && &input.to_lowercase()[..3] == "day" {
-            unwrap_or_return_option!(input.split(' ').nth(1), "Invalid Day \"{}\"", input)
+            unwrap_option_or_return!(input.split(' ').nth(1), "Invalid Day \"{}\"", input)
         } else {
             &input
         };
@@ -146,7 +146,7 @@ impl Year {
             return_err!("Couldn't Find Day \"{}\" In Year {}", day.name, self.year);
         };
 
-        let folder = path.split("/day_").into_iter().next().unwrap();
+        let folder = path.split("/day_").next().unwrap();
         unwrap_or_return!(
             fs::create_dir_all(folder),
             error: e,
@@ -180,10 +180,11 @@ impl Year {
 
         if contents.trim().is_empty() {
             return_err!(
-                "Failed to load input for Year {}, Day {} (Path: \"{}\")\nReason: File is empty",
+                "Failed to load input for Year {}, Day {} (Path: \"{}\")\nReason: File is empty. Please put your input for Day {} into this file",
                 self.year,
                 day_num,
                 path,
+                day_num,
             );
         }
 

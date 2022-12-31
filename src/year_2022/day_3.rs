@@ -33,7 +33,7 @@ fn get_line_priority(line: &str) -> Result<u32, BoxedError> {
     let (first_half, second_half) = line.trim().split_at(line.len() / 2);
     let halfs = vec![first_half, second_half];
 
-    let common_char = unwrap_or_return_option!(
+    let common_char = unwrap_option_or_return!(
         get_common_char(&halfs),
         "Failed to find a common character in the line \"{}\"",
         line
@@ -43,7 +43,7 @@ fn get_line_priority(line: &str) -> Result<u32, BoxedError> {
 }
 
 fn get_group_priority(group: &[&str]) -> Result<u32, BoxedError> {
-    let common_char = unwrap_or_return_option!(
+    let common_char = unwrap_option_or_return!(
         get_common_char(group),
         "Failed to find a common character in the group \"{:#?}\"",
         group

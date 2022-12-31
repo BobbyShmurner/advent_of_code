@@ -44,7 +44,7 @@ impl Grid {
                     elevation = 'z';
                 }
 
-                if !('a'..='z').contains(&elevation) {
+                if !elevation.is_ascii_lowercase() {
                     return_err!("Invalid char \'{}\' at position ({}, {})", elevation, x, y);
                 }
 
